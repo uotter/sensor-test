@@ -12,10 +12,10 @@ project_root_path = os.path.abspath('..')
 feature_index_list = [0, 1, 2]
 TIME_STEP = 200
 feature_index_str = "-".join(str(x) for x in feature_index_list)
-preprocess_data_path = project_root_path + r"\data\sklearn_" + feature_index_str
-sklearn_model_path = project_root_path + r"\model\sklearn_" + feature_index_str
-rnn_model_path = project_root_path + r"\model\keras_" + feature_index_str
-human_test_data_dir = project_root_path + r"\data\human_test"
+preprocess_data_path = project_root_path + r"/data/sklearn_" + feature_index_str
+sklearn_model_path = project_root_path + r"/model/sklearn_" + feature_index_str
+rnn_model_path = project_root_path + r"/model/keras_" + feature_index_str
+human_test_data_dir = project_root_path + "/data/human_test"
 
 
 def get_human_test_data(human_dir=human_test_data_dir):
@@ -165,7 +165,7 @@ def plot_data_scatter(scatter_x, scatter_y, fit_transform=True):
     plt.show()
 
 
-def get_filename_list(pos_file_dir=project_root_path + r"\data\pos", neg_file_dir=project_root_path + r"\data\neg"):
+def get_filename_list(pos_file_dir=project_root_path + "/data/pos", neg_file_dir=project_root_path + "/data/neg"):
     pos_dir_file_list = os.listdir(pos_file_dir)  # 列出文件夹下所有的目录与文件
     neg_dir_file_list = os.listdir(neg_file_dir)
     pos_file_name_list = []
