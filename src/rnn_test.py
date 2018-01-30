@@ -116,7 +116,7 @@ class SensorLSTM:
     @staticmethod
     def build_model():
         model = Sequential()
-        model.add(LSTM(128, input_shape=(TIME_STEP, INPUT_DIV)))
+        model.add(Bidirectional(LSTM(128), input_shape=(TIME_STEP, INPUT_DIV)))
         model.add(Dropout(0.5))
         model.add(Dense(2, activation='softmax'))
         model.compile('RMSprop', 'categorical_crossentropy', metrics=['accuracy'])
