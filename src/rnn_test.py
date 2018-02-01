@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from keras.models import Sequential
 from keras.utils import to_categorical
-from keras.layers import Embedding, Bidirectional, LSTM, Dropout, Dense
+from keras.layers import Embedding, Bidirectional, LSTM, Dropout, Dense,GRU,SimpleRNN
+from keras.layers.convolutional import Conv2D,Conv1D
 import src.iolib as il
 
 feature_index_list = il.feature_index_list
@@ -116,7 +117,7 @@ class SensorLSTM:
     @staticmethod
     def build_model():
         model = Sequential()
-        model.add(Bidirectional(LSTM(128), input_shape=(TIME_STEP, INPUT_DIV)))
+        model.add(Bidirectional(LSTM(32), input_shape=(TIME_STEP, INPUT_DIV)))
         model.add(Dropout(0.5))
         model.add(Dense(2, activation='softmax'))
         model.compile('RMSprop', 'categorical_crossentropy', metrics=['accuracy'])
