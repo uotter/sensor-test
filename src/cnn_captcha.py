@@ -23,6 +23,12 @@ model_name = project_root_path + "/model/keras_captcha.model"
 
 
 def get_randm_image(target_str, random_flag):
+    '''
+    生成单幅的验证码图片
+    :param target_str: 要生成的验证码对应的字符串
+    :param random_flag: 是否使用随机模式生成验证码 为True是 target_str参数无效
+    :return: 返回验证码图片
+    '''
     width, height, n_len, n_class = 170, 80, 4, len(characters)
 
     generator = ImageCaptcha(width=width, height=height)
@@ -39,6 +45,12 @@ def get_randm_image(target_str, random_flag):
 
 
 def get_randm_images_batches(image_path, image_num):
+    '''
+    批量生成随机验证码图片
+    :param image_path: 图片保存路径
+    :param image_num: 生成图片数量
+    :return: 无
+    '''
     global IMAGE_WIDTH, IMAGE_HEIGHT
     for image_index in range(image_num):
         img = ImageCaptcha(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
@@ -47,7 +59,8 @@ def get_randm_images_batches(image_path, image_num):
 
 
 def decode(y):
-    y = np.argmax(np.array(y), axis=2)[:, 0]
+    y = y.reshape(n_len, n_class)
+    y = np.argmax(y, axis=1)
     return ''.join([characters[x] for x in y])
 
 
@@ -70,7 +83,7 @@ def get_data(image_file_dir=project_root_path + "/image"):
     file_name_list, file_str_list = get_filename_list(image_file_dir)
     sample_num = len(file_name_list)
     X = np.zeros((sample_num, IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
-    y = [np.zeros((sample_num, n_class), dtype=np.uint8) for i in range(n_len)]
+    y = np.zeros((sample_num, n_class * n_len), dtype=np.uint8)
     for i in range(sample_num):
         file_path = file_name_list[i]
         file_str = file_str_list[i]
@@ -78,8 +91,24 @@ def get_data(image_file_dir=project_root_path + "/image"):
         image_arr = image_file.reshape((IMAGE_HEIGHT, IMAGE_WIDTH, 3))
         X[i] = image_arr
         for j, ch in enumerate(file_str):
-            y[j][i, :] = 0
-            y[j][i, characters.find(ch)] = 1
+            y[i, j * n_class + characters.find(ch)] = 1
+    return X, y
+
+
+def load_single_image(single_image_name="2IO7"):
+    global IMAGE_WIDTH, IMAGE_HEIGHT, n_class, n_len
+    sample_num = 1
+    single_image_path = images_dir + single_image_name + ".png"
+    X = np.zeros((sample_num, IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.float64)
+    y = np.zeros((sample_num, n_class * n_len), dtype=np.float64)
+    for i in range(sample_num):
+        image_file = mpimg.imread(single_image_path)
+        image_arr = image_file.reshape((IMAGE_HEIGHT, IMAGE_WIDTH, 3))
+        X[i] = image_arr
+        for j, ch in enumerate(single_image_name):
+            y[i, j * n_class + characters.find(ch)] = 1
+        # plt.imshow(X[i])
+    # plt.show()
     return X, y
 
 
@@ -93,11 +122,11 @@ def build_network(input_image_height, input_image_width):
 
     x = Flatten()(x)
     x = Dropout(0.25)(x)
-    x = [Dense(n_class, activation='softmax', name='c%d' % (i + 1))(x) for i in range(4)]
+    x = Dense(n_class * n_len, activation='softmax', name='c-output')(x)
     model = Model(input=input_tensor, output=x)
 
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='adadelta',
+    model.compile(loss='mse',
+                  optimizer='adam',
                   metrics=['accuracy'])
     return model
 
@@ -141,8 +170,7 @@ if __name__ == "__main__":
     # get_randm_images_batches(images_dir, image_num)
     # Step 2:Train, evaluate and save the model on the given dataset for the first time
     X, y = get_data(images_dir)
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=1)
-    X_train, X_test, y_train, y_test = X, X, y, y
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=1)
     model = build_network(IMAGE_HEIGHT, IMAGE_WIDTH)
     history = model.fit(X_train, y_train, batch_size=BATCH_SIZE, epochs=epochs, validation_split=0.33)
     score = model.evaluate(X_test, y_test)
@@ -151,9 +179,9 @@ if __name__ == "__main__":
     model.save(model_name)
     # Step 3:Load the saved model and test it with single sample
     model = load_trained_model(model_name, IMAGE_HEIGHT, IMAGE_WIDTH)
-    random_index = np.random.randint(0, X.shape[0])
-    xtest, ytest = X[random_index], y[random_index]
+    xtest, ytest = load_single_image()
     y_pred = model.predict(xtest)
+    # print(y_pred)
     plt.title('real: %s\npred:%s' % (decode(ytest), decode(y_pred)))
-    plt.imshow(xtest[0], cmap='gray')
+    plt.imshow(xtest[0])
     plt.show()
